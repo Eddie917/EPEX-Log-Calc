@@ -371,7 +371,11 @@ export default function TransportCostCalculator() {
           </CardContent>
         </Card>
 
-        <p className="text-xs text-slate-500">Tip: Ulož si preset pre každé vozidlo zvlášť.</p>
+        <p className="text-xs text-slate-500 mt-6">
+  Created by <span className="font-medium">Eduard Ostramok</span> <span title="ochranná známka">™</span>
+  {" "}• © {new Date().getFullYear()}
+</p>
+
       </div>
     </div>
   );
