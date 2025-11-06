@@ -17,258 +17,158 @@ const toNum = (v: number | "") => (typeof v === "number" ? v : 0);
 const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"]; 
 
 export default function TransportCostCalculator() {
+  // Route
   const [legs, setLegs] = useState<Leg[]>([{ id: crypto.randomUUID(), name: "Úsek 1", km: 0 }]);
-  const [prejazdNakladkaKm, setPrejazdNakladkaKm] = useState<number>(0);
+  const [prejazdNakladkaKm, setPrejazdNakladkaKm] = useState<number | "">("");
 
-  const [consumption, setConsumption] = useState<number>(12);
-  const [fuelPrice, setFuelPrice] = useState<number>(1.60);
-  const [adbluePct, setAdbluePct] = useState<number>(0);
-  const [adbluePrice, setAdbluePrice] = useState<number>(1.20);
+  // Vehicle & fuel (no default numbers)
+  const [consumption, setConsumption] = useState<number | "">(""); // l/100 km
+  const [fuelPrice, setFuelPrice]     = useState<number | "">(""); // €/l
+  const [adbluePct, setAdbluePct]     = useState<number | "">(""); // % of fuel
+  const [adbluePrice, setAdbluePrice] = useState<number | "">(""); // €/l
 
-  const [hourlyRate, setHourlyRate] = useState<number>(10);
-  const [driveHours, setDriveHours] = useState<number>(0);
-  const [workHours, setWorkHours] = useState<number>(0);
-  const [perDiem, setPerDiem] = useState<number>(0);
-  const [days, setDays] = useState<number>(0);
+  // Driver
+  const [hourlyRate, setHourlyRate]   = useState<number | "">(""); // €/h
+  const [driveHours, setDriveHours]   = useState<number | "">(""); // h
+  // Per diem total €
+  const [perDiem, setPerDiem]         = useState<number | "">("");
 
-  const [fees, setFees] = useState<Fee[]>([]);
-  const [otherCost, setOtherCost] = useState<number>(0);
-  const [extraExpenses, setExtraExpenses] = useState<number>(0);
+  // Fees & other
+  const [fees, setFees]               = useState<Fee[]>([]);
+  const [otherCost, setOtherCost]     = useState<number | \"\">(\"\");
 
-  const [marginPct, setMarginPct] = useState<number>(0);
-  const [applyVat, setApplyVat] = useState<boolean>(false);
-  const [vatPct, setVatPct] = useState<number>(20);
+  // Pricing
+  const [marginPct, setMarginPct]     = useState<number | \"\">(\"\"); // %
+  const [applyVat, setApplyVat]       = useState<boolean>(false);
+  const [vatPct, setVatPct]           = useState<number | \"\">(\"\"); // %
 
-  const [presetName, setPresetName] = useState<string>("");
+  // Preset name
+  const [presetName, setPresetName]   = useState<string>(\"\");
 
-  const totalKm = useMemo(() => prejazdNakladkaKm + legs.reduce((s, l) => s + toNum(l.km), 0), [prejazdNakladkaKm, legs]);
-  const fuelLiters = useMemo(() => (totalKm * consumption) / 100, [totalKm, consumption]);
-  const fuelCost = useMemo(() => fuelLiters * fuelPrice, [fuelLiters, fuelPrice]);
-  const adblueLiters = useMemo(() => (fuelLiters * adbluePct) / 100, [fuelLiters, adbluePct]);
-  const adblueCost = useMemo(() => adblueLiters * adbluePrice, [adblueLiters, adbluePrice]);
-  const feesTotal = useMemo(() => fees.reduce((s, f) => s + toNum(f.amount), 0), [fees]);
-  const driverCost = useMemo(() => hourlyRate * (driveHours + workHours), [hourlyRate, driveHours, workHours]);
-  const perDiemCost = useMemo(() => perDiem * days, [perDiem, days]);
-  const baseCost = useMemo(() => fuelCost + adblueCost + feesTotal + driverCost + perDiemCost + otherCost + extraExpenses, [fuelCost, adblueCost, feesTotal, driverCost, perDiemCost, otherCost, extraExpenses]);
-  const marginAmt = useMemo(() => (baseCost * marginPct) / 100, [baseCost, marginPct]);
-  const priceNet = useMemo(() => baseCost + marginAmt, [baseCost, marginAmt]);
-  const priceGross = useMemo(() => (applyVat ? priceNet * (1 + vatPct / 100) : priceNet), [applyVat, priceNet, vatPct]);
-  const costPerKm = useMemo(() => (totalKm > 0 ? baseCost / totalKm : 0), [baseCost, totalKm]);
-  const pricePerKm = useMemo(() => (totalKm > 0 ? priceNet / totalKm : 0), [priceNet, totalKm]);
+  // Derived
+  const totalKm      = useMemo(() => toNum(prejazdNakladkaKm) + legs.reduce((s, l) => s + toNum(l.km), 0), [prejazdNakladkaKm, legs]);
+  const fuelLiters   = useMemo(() => (totalKm * toNum(consumption)) / 100, [totalKm, consumption]);
+  const fuelCost     = useMemo(() => fuelLiters * toNum(fuelPrice), [fuelLiters, fuelPrice]);
+  const adblueLiters = useMemo(() => (fuelLiters * toNum(adbluePct)) / 100, [fuelLiters, adbluePct]);
+  const adblueCost   = useMemo(() => adblueLiters * toNum(adbluePrice), [adblueLiters, adbluePrice]);
+  const feesTotal    = useMemo(() => fees.reduce((s, f) => s + toNum(f.amount), 0), [fees]);
+  const driverCost   = useMemo(() => toNum(hourlyRate) * toNum(driveHours), [hourlyRate, driveHours]);
+  const perDiemCost  = useMemo(() => toNum(perDiem), [perDiem]);
+  const baseCost     = useMemo(() => fuelCost + adblueCost + feesTotal + driverCost + perDiemCost + toNum(otherCost), [fuelCost, adblueCost, feesTotal, driverCost, perDiemCost, otherCost]);
+  const marginAmt    = useMemo(() => (baseCost * toNum(marginPct)) / 100, [baseCost, marginPct]);
+  const priceNet     = useMemo(() => baseCost + marginAmt, [baseCost, marginAmt]);
+  const priceGross   = useMemo(() => (applyVat ? priceNet * (1 + toNum(vatPct) / 100) : priceNet), [applyVat, priceNet, vatPct]);
+  const costPerKm    = useMemo(() => (totalKm > 0 ? baseCost / totalKm : 0), [baseCost, totalKm]);
+  const pricePerKm   = useMemo(() => (totalKm > 0 ? priceNet / totalKm : 0), [priceNet, totalKm]);
 
   const pieData = [
-    { name: "Palivo", value: fuelCost },
-    { name: "AdBlue", value: adblueCost },
-    { name: "Mýta/poplatky", value: feesTotal },
-    { name: "Vodič", value: driverCost },
-    { name: "Diéty", value: perDiemCost },
-    { name: "Ostatné", value: otherCost },
-    { name: "Ďalšie výdavky", value: extraExpenses },
+    { name: \"Palivo\", value: fuelCost },
+    { name: \"AdBlue\", value: adblueCost },
+    { name: \"Mýta/poplatky\", value: feesTotal },
+    { name: \"Vodič\", value: driverCost },
+    { name: \"Diéty\", value: perDiemCost },
+    { name: \"Ostatné\", value: toNum(otherCost) },
   ].filter(d => d.value > 0.0001);
 
-  useEffect(() => { const s = localStorage.getItem("transport-cost-preset"); if (s) { try { JSON.parse(s); } catch {} } }, []);
+  // Presets (local storage)
+  useEffect(() => {
+    const saved = localStorage.getItem(\"transport-cost-preset\");
+    if (saved) { try { JSON.parse(saved); } catch {} }
+  }, []);
 
   const handleSavePreset = () => {
-    const payload = { presetName, legs, prejazdNakladkaKm, consumption, fuelPrice, adbluePct, adbluePrice, hourlyRate, driveHours, workHours, perDiem, days, fees, otherCost, extraExpenses, marginPct, applyVat, vatPct };
-    localStorage.setItem("transport-cost-preset", JSON.stringify(payload));
-    alert("Preset uložený do tohto prehliadača.");
+    const payload = {
+      presetName, legs, prejazdNakladkaKm,
+      consumption, fuelPrice, adbluePct, adbluePrice,
+      hourlyRate, driveHours, perDiem,
+      fees, otherCost, marginPct, applyVat, vatPct
+    };
+    localStorage.setItem(\"transport-cost-preset\", JSON.stringify(payload));
+    alert(\"Preset uložený do tohto prehliadača.\");
   };
+
   const handleLoadPreset = () => {
-    const s = localStorage.getItem("transport-cost-preset"); if (!s) return alert("Žiadny preset v prehliadači.");
+    const s = localStorage.getItem(\"transport-cost-preset\");
+    if (!s) return alert(\"Žiadny preset v prehliadači.\");
     try {
       const p = JSON.parse(s);
-      setPresetName(p.presetName || "");
+      setPresetName(p.presetName || \"\");
       setLegs(p.legs || []);
-      setPrejazdNakladkaKm(p.prejazdNakladkaKm ?? 0);
-      setConsumption(p.consumption ?? 12);
-      setFuelPrice(p.fuelPrice ?? 1.6);
-      setAdbluePct(p.adbluePct ?? 0);
-      setAdbluePrice(p.adbluePrice ?? 1.2);
-      setHourlyRate(p.hourlyRate ?? 10);
-      setDriveHours(p.driveHours ?? 0);
-      setWorkHours(p.workHours ?? 0);
-      setPerDiem(p.perDiem ?? 0);
-      setDays(p.days ?? 0);
+      setPrejazdNakladkaKm(p.prejazdNakladkaKm ?? \"\");
+      setConsumption(p.consumption ?? \"\");
+      setFuelPrice(p.fuelPrice ?? \"\");
+      setAdbluePct(p.adbluePct ?? \"\");
+      setAdbluePrice(p.adbluePrice ?? \"\");
+      setHourlyRate(p.hourlyRate ?? \"\");
+      setDriveHours(p.driveHours ?? \"\");
+      setPerDiem(p.perDiem ?? \"\");
       setFees(p.fees || []);
-      setOtherCost(p.otherCost ?? 0);
-      setExtraExpenses(p.extraExpenses ?? 0);
-      setMarginPct(p.marginPct ?? 0);
+      setOtherCost(p.otherCost ?? \"\");
+      setMarginPct(p.marginPct ?? \"\");
       setApplyVat(!!p.applyVat);
-      setVatPct(p.vatPct ?? 20);
-    } catch { alert("Preset sa nepodarilo načítať."); }
+      setVatPct(p.vatPct ?? \"\");
+    } catch {
+      alert(\"Preset sa nepodarilo načítať.\");
+    }
   };
+
   const resetAll = () => {
-    setLegs([{ id: crypto.randomUUID(), name: "Úsek 1", km: 0 }]);
-    setConsumption(12); setFuelPrice(1.6); setAdbluePct(0); setAdbluePrice(1.2);
-    setHourlyRate(10); setDriveHours(0); setWorkHours(0);
-    setPerDiem(0); setDays(0); setPrejazdNakladkaKm(0); setFees([]); setOtherCost(0); setExtraExpenses(0);
-    setMarginPct(0); setApplyVat(false); setVatPct(20); setPresetName(""); 
+    setLegs([{ id: crypto.randomUUID(), name: \"Úsek 1\", km: 0 }]);
+    setPrejazdNakladkaKm(\"\");
+    setConsumption(\"\");
+    setFuelPrice(\"\");
+    setAdbluePct(\"\");
+    setAdbluePrice(\"\");
+    setHourlyRate(\"\");
+    setDriveHours(\"\");
+    setPerDiem(\"\");
+    setFees([]);
+    setOtherCost(\"\");
+    setMarginPct(\"\");
+    setApplyVat(false);
+    setVatPct(\"\");
+    setPresetName(\"\");
   };
 
   const downloadCSV = () => {
     const rows: (string|number)[][] = [
-      ["Metrika", "Hodnota"],
-      ["Prejazd k nakládke (km)", prejazdNakladkaKm],
-      ["Km spolu", totalKm],
-      ["Palivo (l)", fuelLiters],
-      ["Palivo €", fuelCost],
-      ["AdBlue (l)", adblueLiters],
-      ["AdBlue €", adblueCost],
-      ["Mýta/poplatky €", feesTotal],
-      ["Vodič €", driverCost],
-      ["Diéty €", perDiemCost],
-      ["Ostatné €", otherCost],
-      ["Ďalšie výdavky €", extraExpenses],
-      ["Náklad spolu €", baseCost],
-      ["Marža %", marginPct],
-      ["Marža €", marginAmt],
-      ["Cena (bez DPH) €", priceNet],
-      ["DPH %", applyVat ? vatPct : 0],
-      ["Cena (s DPH) €", priceGross],
-      ["Náklad/km €", costPerKm],
-      ["Cena/km €", pricePerKm],
+      [\"Metrika\", \"Hodnota\"],
+      [\"Prejazd k nakládke (km)\", toNum(prejazdNakladkaKm)],
+      [\"Km spolu\", totalKm],
+      [\"Palivo (l)\", fuelLiters],
+      [\"Palivo €\", fuelCost],
+      [\"AdBlue (l)\", adblueLiters],
+      [\"AdBlue €\", adblueCost],
+      [\"Mýta/poplatky €\", feesTotal],
+      [\"Vodič €\", driverCost],
+      [\"Diéty €\", perDiemCost],
+      [\"Ostatné €\", toNum(otherCost)],
+      [\"Náklad spolu €\", baseCost],
+      [\"Marža %\", toNum(marginPct)],
+      [\"Marža €\", marginAmt],
+      [\"Cena (bez DPH) €\", priceNet],
+      [\"DPH %\", applyVat ? toNum(vatPct) : 0],
+      [\"Cena (s DPH) €\", priceGross],
+      [\"Náklad/km €\", costPerKm],
+      [\"Cena/km €\", pricePerKm],
     ];
-    const csv = rows.map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const csv = rows.map(r => r.join(\",\")).join(\"\n\");
+    const blob = new Blob([csv], { type: \"text/csv;charset=utf-8;\" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url;
+    const a = document.createElement(\"a\"); a.href = url;
     a.download = `kalkulacia_prepravy_${new Date().toISOString().slice(0,10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white p-4 md:p-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <motion.h1 initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-4xl font-bold tracking-tight">
-          Kalkulačka nákladov na prepravu
-        </motion.h1>
-
-        <div className="flex flex-wrap gap-2 items-center">
-          <Input placeholder="Názov/preset" value={presetName} onChange={(e) => setPresetName(e.target.value)} className="w-56" />
-          <Button onClick={handleSavePreset} className="gap-2"><Save size={16}/> Uložiť preset</Button>
-          <Button onClick={handleLoadPreset} className="gap-2"><Upload size={16}/> Načítať</Button>
-          <Button onClick={resetAll} className="gap-2"><RefreshCw size={16}/> Reset</Button>
-          <Button onClick={downloadCSV} className="gap-2"><Download size={16}/> CSV export</Button>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="shadow-sm">
-            <CardHeader><CardTitle className="flex items-center gap-2"><Calculator size={18}/> Trasa a poplatky</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Prejazd k nakládke (km)</Label>
-                <div className="flex items-center gap-2">
-                  <Input type="number" inputMode="decimal" step="0.1" min="0" value={prejazdNakladkaKm} onChange={(e) => setPrejazdNakladkaKm(Number(e.target.value))} className="w-40" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Úseky trasy (km)</Label>
-                <div className="space-y-2">
-                  {legs.map((leg) => (
-                    <div key={leg.id} className="flex items-center gap-2">
-                      <Input value={leg.name} onChange={(e) => setLegs(v => v.map(x => x.id === leg.id ? { ...x, name: e.target.value } : x))} className="w-40" />
-                      <Input type="number" inputMode="decimal" step="0.1" min="0" value={leg.km} onChange={(e) => setLegs(v => v.map(x => x.id === leg.id ? { ...x, km: Number(e.target.value) } : x))} placeholder="km" />
-                      <Button onClick={() => setLegs(v => v.filter(x => x.id !== leg.id))} title="Odstrániť"><Trash2 size={16}/></Button>
-                    </div>
-                  ))}
-                  <Button onClick={() => setLegs(v => [...v, { id: crypto.randomUUID(), name: `Úsek ${v.length + 1}`, km: 0 }])} className="gap-2">
-                    <PlusCircle size={16}/> Pridať úsek
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Mýta / poplatky / parkovanie</Label>
-                <div className="space-y-2">
-                  {fees.map((f) => (
-                    <div key={f.id} className="flex items-center gap-2">
-                      <Input value={f.name} onChange={(e) => setFees(v => v.map(x => x.id === f.id ? { ...x, name: e.target.value } : x))} className="w-40" placeholder="Názov" />
-                      <Input type="number" inputMode="decimal" step="0.01" min="0" value={f.amount} onChange={(e) => setFees(v => v.map(x => x.id === f.id ? { ...x, amount: Number(e.target.value) } : x))} placeholder="€" />
-                      <Button onClick={() => setFees(v => v.filter(x => x.id !== f.id))} title="Odstrániť poplatok"><Trash2 size={16}/></Button>
-                    </div>
-                  ))}
-                  <Button onClick={() => setFees(v => [...v, { id: crypto.randomUUID(), name: "Mýto", amount: 0 }])} className="gap-2">
-                    <PlusCircle size={16}/> Pridať poplatok
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader><CardTitle className="flex items-center gap-2"><Fuel size={18}/> Vozidlo a ceny</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div><Label>Spotreba (l/100 km)</Label><Input type="number" step="0.1" min="0" value={consumption} onChange={e => setConsumption(Number(e.target.value))} /></div>
-              <div><Label>Cena paliva (€/l)</Label><Input type="number" step="0.001" min="0" value={fuelPrice} onChange={e => setFuelPrice(Number(e.target.value))} /></div>
-              <div><Label>AdBlue (% z paliva)</Label><Input type="number" step="0.1" min="0" value={adbluePct} onChange={e => setAdbluePct(Number(e.target.value))} /></div>
-              <div><Label>Cena AdBlue (€/l)</Label><Input type="number" step="0.01" min="0" value={adbluePrice} onChange={e => setAdbluePrice(Number(e.target.value))} /></div>
-              <div><Label>Sadzba vodiča (€/h)</Label><Input type="number" step="0.1" min="0" value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))} /></div>
-              <div><Label>Jazda (h)</Label><Input type="number" step="0.1" min="0" value={driveHours} onChange={e => setDriveHours(Number(e.target.value))} /></div>
-              <div><Label>Práca (nakládka atď.) (h)</Label><Input type="number" step="0.1" min="0" value={workHours} onChange={e => setWorkHours(Number(e.target.value))} /></div>
-              <div><Label>Diéty (€/deň)</Label><Input type="number" step="0.1" min="0" value={perDiem} onChange={e => setPerDiem(Number(e.target.value))} /></div>
-              <div><Label>Počet dní</Label><Input type="number" step="1" min="0" value={days} onChange={e => setDays(Number(e.target.value))} /></div>
-              <div className="col-span-2"><Label>Ostatné náklady (€)</Label><Input type="number" step="0.1" min="0" value={otherCost} onChange={e => setOtherCost(Number(e.target.value))} /></div>
-              <div className="col-span-2"><Label>Ďalšie výdavky (mýto, horské priechody…)</Label><Input type="number" step="0.1" min="0" value={extraExpenses} onChange={e => setExtraExpenses(Number(e.target.value))} /></div>
-              <div><Label>Marža (%)</Label><Input type="number" step="0.1" min="0" value={marginPct} onChange={e => setMarginPct(Number(e.target.value))} /></div>
-              <div className="flex items-center gap-3">
-                <div><Label>DPH (%)</Label><Input type="number" step="1" min="0" value={vatPct} onChange={e => setVatPct(Number(e.target.value))} /></div>
-                <div className="pt-6 flex items-center gap-2"><Switch checked={applyVat} onCheckedChange={setApplyVat} /><span className="text-sm">Započítať DPH</span></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="shadow-sm">
-          <CardHeader><CardTitle className="flex items-center gap-2"><Euro size={18}/> Súhrn a rozpad</CardTitle></CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-6 items-start">
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <Stat label="Km spolu" value={`${fmt2(totalKm)} km`} />
-                <Stat label="Palivo" value={`${fmt2(fuelLiters)} l / ${fmt2(fuelCost)} €`} />
-                <Stat label="AdBlue" value={`${fmt2(adblueLiters)} l / ${fmt2(adblueCost)} €`} />
-                <Stat label="Mýta, poplatky" value={`${fmt2(feesTotal)} €`} />
-                <Stat label="Vodič" value={`${fmt2(driverCost)} €`} />
-                <Stat label="Diéty" value={`${fmt2(perDiemCost)} €`} />
-                <Stat label="Ostatné" value={`${fmt2(otherCost)} €`} />
-                <Stat label="Ďalšie výdavky" value={`${fmt2(extraExpenses)} €`} />
-                <Stat label="Náklad/km" value={`${fmt2(costPerKm)} €/km`} />
-                <div className="col-span-2 h-px bg-slate-200 my-2" />
-                <Stat label="Náklad spolu" value={`${fmt2(baseCost)} €`} highlight />
-                <Stat label="Marža" value={`${fmt2(marginAmt)} € (${fmt2(marginPct)}%)`} />
-                <Stat label="Cena (bez DPH)" value={`${fmt2(priceNet)} €`} highlight />
-                <Stat label={applyVat ? `Cena (s DPH ${vatPct}%)` : "Cena (s DPH)"} value={`${fmt2(priceGross)} €`} highlight />
-                <Stat label="Cena/km (bez DPH)" value={`${fmt2(pricePerKm)} €/km`} />
-              </div>
-            </div>
-
-            {typeof window !== "undefined" && (
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={100} label>
-                      {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                    </Pie>
-                    <Tooltip formatter={(v: number) => `${fmt2(Number(v))} €`} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <p className="text-xs text-slate-500">Tip: Ulož si preset pre každé vozidlo zvlášť.</p>
-      </div>
-    </div>
-  );
+    <div className=\"min-h-screen w-full bg-gradient-to-b from-slate-50 to-white p-4 md:p-8\">\n      <div className=\"mx-auto max-w-6xl space-y-6\">\n        <motion.h1 initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className=\"text-3xl md:text-4xl font-bold tracking-tight\">\n          Kalkulačka nákladov na prepravu\n        </motion.h1>\n\n        <div className=\"flex flex-wrap gap-2 items-center\">\n          <Input placeholder=\"Názov/preset\" value={presetName} onChange={(e) => setPresetName(e.target.value)} className=\"w-56\" />\n          <Button onClick={handleSavePreset} className=\"gap-2\"><Save size={16}/> Uložiť preset</Button>\n          <Button onClick={handleLoadPreset} className=\"gap-2\"><Upload size={16}/> Načítať</Button>\n          <Button onClick={resetAll} className=\"gap-2\"><RefreshCw size={16}/> Reset</Button>\n          <Button onClick={downloadCSV} className=\"gap-2\"><Download size={16}/> CSV export</Button>\n        </div>\n\n        <div className=\"grid md:grid-cols-2 gap-6\">\n          <Card className=\"shadow-sm\">\n            <CardHeader><CardTitle className=\"flex items-center gap-2\"><Calculator size={18}/> Trasa a poplatky</CardTitle></CardHeader>\n            <CardContent className=\"space-y-4\">\n              <div className=\"space-y-2\">\n                <Label>Prejazd k nakládke (km)</Label>\n                <div className=\"flex items-center gap-2\">\n                  <Input type=\"number\" inputMode=\"decimal\" step=\"0.1\" min=\"0\" value={prejazdNakladkaKm} onChange={(e) => setPrejazdNakladkaKm(e.target.value === \"\" ? \"\" : Number(e.target.value))} className=\"w-40\" />\n                </div>\n              </div>\n\n              <div className=\"space-y-2\">\n                <Label>Úseky trasy (km)</Label>\n                <div className=\"space-y-2\">\n                  {legs.map((leg) => (\n                    <div key={leg.id} className=\"flex items-center gap-2\">\n                      <Input value={leg.name} onChange={(e) => setLegs(v => v.map(x => x.id === leg.id ? { ...x, name: e.target.value } : x))} className=\"w-40\" />\n                      <Input type=\"number\" inputMode=\"decimal\" step=\"0.1\" min=\"0\" value={leg.km} onChange={(e) => setLegs(v => v.map(x => x.id === leg.id ? { ...x, km: e.target.value === \"\" ? \"\" : Number(e.target.value) } : x))} placeholder=\"km\" />\n                      <Button onClick={() => setLegs(v => v.filter(x => x.id !== leg.id))} title=\"Odstrániť\"><Trash2 size={16}/></Button>\n                    </div>\n                  ))}\n                  <Button onClick={() => setLegs(v => [...v, { id: crypto.randomUUID(), name: `Úsek ${v.length + 1}`, km: 0 }])} className=\"gap-2\">\n                    <PlusCircle size={16}/> Pridať úsek\n                  </Button>\n                </div>\n              </div>\n\n              <div className=\"space-y-2\">\n                <Label>Mýta / poplatky / parkovanie</Label>\n                <div className=\"space-y-2\">\n                  {fees.map((f) => (\n                    <div key={f.id} className=\"flex items-center gap-2\">\n                      <Input value={f.name} onChange={(e) => setFees(v => v.map(x => x.id === f.id ? { ...x, name: e.target.value } : x))} className=\"w-40\" placeholder=\"Názov\" />\n                      <Input type=\"number\" inputMode=\"decimal\" step=\"0.01\" min=\"0\" value={f.amount} onChange={(e) => setFees(v => v.map(x => x.id === f.id ? { ...x, amount: e.target.value === \"\" ? \"\" : Number(e.target.value) } : x))} placeholder=\"€\" />\n                      <Button onClick={() => setFees(v => v.filter(x => x.id !== f.id))} title=\"Odstrániť poplatok\"><Trash2 size={16}/></Button>\n                    </div>\n                  ))}\n                  <Button onClick={() => setFees(v => [...v, { id: crypto.randomUUID(), name: \"Mýto\", amount: 0 }])} className=\"gap-2\">\n                    <PlusCircle size={16}/> Pridať poplatok\n                  </Button>\n                </div>\n              </div>\n            </CardContent>\n          </Card>\n\n          <Card className=\"shadow-sm\">\n            <CardHeader><CardTitle className=\"flex items-center gap-2\"><Fuel size={18}/> Vozidlo a ceny</CardTitle></CardHeader>\n            <CardContent className=\"grid grid-cols-2 gap-4\">\n              <div><Label>Spotreba (l/100 km)</Label><Input type=\"number\" step=\"0.1\" min=\"0\" value={consumption} onChange={e => setConsumption(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div><Label>Cena paliva (€/l)</Label><Input type=\"number\" step=\"0.001\" min=\"0\" value={fuelPrice} onChange={e => setFuelPrice(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div><Label>AdBlue (% z paliva)</Label><Input type=\"number\" step=\"0.1\" min=\"0\" value={adbluePct} onChange={e => setAdbluePct(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div><Label>Cena AdBlue (€/l)</Label><Input type=\"number\" step=\"0.01\" min=\"0\" value={adbluePrice} onChange={e => setAdbluePrice(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div><Label>Sadzba vodiča (€/h)</Label><Input type=\"number\" step=\"0.1\" min=\"0\" value={hourlyRate} onChange={e => setHourlyRate(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div><Label>Jazda (h)</Label><Input type=\"number\" step=\"0.1\" min=\"0\" value={driveHours} onChange={e => setDriveHours(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div><Label>Diéty (€)</Label><Input type=\"number\" step=\"0.1\" min=\"0\" value={perDiem} onChange={e => setPerDiem(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div className=\"col-span-2\"><Label>Ostatné náklady (€)</Label><Input type=\"number\" step=\"0.1\" min=\"0\" value={otherCost} onChange={e => setOtherCost(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div><Label>Marža (%)</Label><Input type=\"number\" step=\"0.1\" min=\"0\" value={marginPct} onChange={e => setMarginPct(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n              <div className=\"flex items-center gap-3\">\n                <div><Label>DPH (%)</Label><Input type=\"number\" step=\"1\" min=\"0\" value={vatPct} onChange={e => setVatPct(e.target.value === \"\" ? \"\" : Number(e.target.value))} /></div>\n                <div className=\"pt-6 flex items-center gap-2\"><Switch checked={applyVat} onCheckedChange={setApplyVat} /><span className=\"text-sm\">Započítať DPH</span></div>\n              </div>\n            </CardContent>\n          </Card>\n        </div>\n\n        <Card className=\"shadow-sm\">\n          <CardHeader><CardTitle className=\"flex items-center gap-2\"><Euro size={18}/> Súhrn</CardTitle></CardHeader>\n          <CardContent className=\"grid md:grid-cols-2 gap-6 items-start\">\n            <div className=\"space-y-3\">\n              <div className=\"grid grid-cols-2 gap-2\">\n                <Stat label=\"Km spolu\" value={`${fmt2(totalKm)} km`} />\n                <Stat label=\"Palivo\" value={`${fmt2(fuelLiters)} l / ${fmt2(fuelCost)} €`} />\n                <Stat label=\"AdBlue\" value={`${fmt2(adblueLiters)} l / ${fmt2(adblueCost)} €`} />\n                <Stat label=\"Mýta, poplatky\" value={`${fmt2(feesTotal)} €`} />\n                <Stat label=\"Vodič\" value={`${fmt2(driverCost)} €`} />\n                <Stat label=\"Diéty\" value={`${fmt2(perDiemCost)} €`} />\n                <Stat label=\"Ostatné\" value={`${fmt2(toNum(otherCost))} €`} />\n                <Stat label=\"Náklad/km\" value={`${fmt2(costPerKm)} €/km`} />\n                <div className=\"col-span-2 h-px bg-slate-200 my-2\" />\n                <Stat label=\"Náklad spolu\" value={`${fmt2(baseCost)} €`} highlight />\n                <Stat label=\"Marža\" value={`${fmt2(marginAmt)} € (${fmt2(toNum(marginPct))}%)`} />\n                <Stat label=\"Cena (bez DPH)\" value={`${fmt2(priceNet)} €`} highlight />\n                <Stat label={applyVat ? `Cena (s DPH ${fmt2(toNum(vatPct))}%)` : \"Cena (s DPH)\"} value={`${fmt2(priceGross)} €`} highlight />\n                <Stat label=\"Cena/km (bez DPH)\" value={`${fmt2(pricePerKm)} €/km`} />\n              </div>\n            </div>\n\n            {typeof window !== \"undefined\" && (\n              <div className=\"h-72\">\n                <ResponsiveContainer width=\"100%\" height=\"100%\">\n                  <PieChart>\n                    <Pie data={pieData} dataKey=\"value\" nameKey=\"name\" outerRadius={100} label>\n                      {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}\n                    </Pie>\n                    <Tooltip formatter={(v: number) => `${fmt2(Number(v))} €`} />\n                    <Legend />\n                  </PieChart>\n                </ResponsiveContainer>\n              </div>\n            )}\n          </CardContent>\n        </Card>\n\n        <p className=\"text-xs text-slate-500\">Tip: Ulož si preset pre každé vozidlo zvlášť.</p>\n      </div>\n    </div>\n  );
 }
 
 function Stat({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`rounded-2xl border p-3 ${highlight ? "bg-indigo-50 border-indigo-200" : "bg-white"}`}>
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className="text-lg font-semibold">{value}</div>
+    <div className={`rounded-2xl border p-3 ${highlight ? \"bg-indigo-50 border-indigo-200\" : \"bg-white\"}`}>
+      <div className=\"text-xs text-slate-500\">{label}</div>
+      <div className=\"text-lg font-semibold\">{value}</div>
     </div>
   );
 }
