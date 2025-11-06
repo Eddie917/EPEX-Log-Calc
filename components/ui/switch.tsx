@@ -1,0 +1,3 @@
+'use client';
+import * as React from 'react';
+export function Switch({ checked, onCheckedChange }: { checked: boolean; onCheckedChange: (v: boolean) => void }) { return (<label className='inline-flex items-center gap-2 cursor-pointer select-none'><input type='checkbox' checked={checked} onChange={(e) => onCheckedChange(e.target.checked)} className='peer sr-only'/><span className='w-10 h-6 rounded-full bg-slate-300 peer-checked:bg-indigo-500 relative transition'><span className='absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-4'/></span></label>); }
